@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CyberThrone: Neon Protocol | Cyberpunk Sliding Puzzle</title>
+  <meta name="description" content="Immerse in CyberThrone, a next-gen cyberpunk sliding puzzle game featuring high-tech audio synthesis, glowing neon holographic tiles, smooth multi-tile sliding, and customizable cyber matrices.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="default">
+
+  <!-- Interactive Background Canvas & CRT Scanline Overlay -->
+  <canvas id="particle-canvas"></canvas>
+  <div class="scanline-overlay"></div>
+
+  <div class="cyber-app">
+    <!-- Top Header -->
+    <header class="cyber-header">
+      <div class="header-container">
+        <div class="brand-wrapper" onclick="app.restartGame()">
+          <div class="brand-logo">
+            <img src="assets/cyberthrone_logo.png" alt="CyberThrone Logo" class="brand-logo-img">
+          </div>
+          <div class="brand-text">
+            <h1>CYBERTHRONE</h1>
+            <span class="brand-badge">NEON GRID PROTOCOL v4.2</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Audio Toggle -->
+          <button id="sound-toggle-btn" class="cyber-btn icon-only active" onclick="app.toggleSound()" title="Toggle Sound FX">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          </button>
+
+          <!-- Leaderboard Button -->
+          <button class="cyber-btn icon-only btn-gold" onclick="app.openLeaderboard()" title="High Scores">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </button>
+
+          <!-- Settings & Themes Button -->
+          <button class="cyber-btn icon-only" onclick="app.openModal('settings-modal')" title="Settings & Custom Holograms">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </button>
+
+          <!-- Intel / Rules Button -->
+          <button class="cyber-btn" onclick="app.openModal('rules-modal')" title="Mission Intel">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>INTEL</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Game Section -->
+    <main class="cyber-main">
+      <!-- Stats HUD Bar -->
+      <div class="stats-hud">
+        <div class="hud-card hud-grid">
+          <span class="hud-label">Matrix Grid</span>
+          <span id="level-display" class="hud-value">3 x 3</span>
+        </div>
+        <div class="hud-card hud-moves">
+          <span class="hud-label">Moves</span>
+          <span id="moves-display" class="hud-value">0</span>
+        </div>
+        <div class="hud-card hud-time">
+          <span class="hud-label">Time</span>
+          <span id="timer-display" class="hud-value">00:00</span>
+        </div>
+      </div>
+
+      <!-- Quick Tools Bar (Art Blueprint Switcher + Hint + Number Badge Toggle) -->
+      <div class="quick-tools-bar">
+        <div class="art-selector">
+          <div class="art-thumb-btn active" data-id="throne_king" onclick="app.setBlueprint(app.blueprints[0])" title="CyberThrone King">
+            <img src="assets/throne_king.png" alt="CyberThrone King">
+          </div>
+          <div class="art-thumb-btn" data-id="gold_knight" onclick="app.setBlueprint(app.blueprints[1])" title="Golden Knight">
+            <img src="assets/gold_knight.png" alt="Golden Knight">
+          </div>
+          <div class="art-thumb-btn" data-id="cyber_duel" onclick="app.setBlueprint(app.blueprints[2])" title="Neon City Duel">
+            <img src="assets/cyber_duel_square.png" alt="Neon City Duel">
+          </div>
+          <div class="art-thumb-btn" data-id="cyber_emblem" onclick="app.setBlueprint(app.blueprints[3])" title="CyberThrone Emblem">
+            <img src="assets/cyberthrone_logo.png" alt="CyberThrone Emblem">
+          </div>
+          <div class="art-thumb-btn" data-id="cyber_pantheon" onclick="app.setBlueprint(app.blueprints[4])" title="Cyber Pantheon">
+            <img src="assets/banner_square.png" alt="Cyber Pantheon">
+          </div>
+        </div>
+
+        <div class="tool-toggles">
+          <!-- Number Badges Toggle -->
+          <button id="toggle-numbers-btn" class="tool-toggle-btn active" onclick="app.toggleNumberBadges()" title="Toggle Number Badges">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+          </button>
+
+          <!-- Hint Helper Button -->
+          <button id="hint-btn" class="tool-toggle-btn" onclick="app.showHint()" title="Request AI Decryption Hint (H)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+          </button>
+
+          <!-- Target Blueprint Preview Modal Trigger -->
+          <button class="tool-toggle-btn" onclick="app.openModal('blueprint-modal')" title="Inspect Blueprint (P)">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Puzzle Frame & Arena -->
+      <div id="puzzle-frame" class="puzzle-frame">
+        <div id="puzzle-board">
+          <!-- Dynamic Sliding Tiles injected by CyberPuzzleEngine -->
+        </div>
+      </div>
+
+      <!-- Controls & Difficulty Selectors -->
+      <div class="controls-row">
+        <div class="difficulty-pill-group">
+          <button class="diff-btn active" data-size="3" onclick="app.setDifficulty(3)">3x3</button>
+          <button class="diff-btn" data-size="4" onclick="app.setDifficulty(4)">4x4</button>
+          <button class="diff-btn" data-size="5" onclick="app.setDifficulty(5)">5x5</button>
+        </div>
+
+        <button class="btn-reboot" onclick="app.restartGame()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>REBOOT GRID</span>
+        </button>
+      </div>
+
+      <!-- Sub-Actions / Key Shortcuts Hint Bar -->
+      <div class="sub-actions-bar">
+        <button class="btn-blueprint-link" onclick="app.openModal('blueprint-modal')">[ Inspect Target Blueprint (P) ]</button>
+        <span class="desktop-hint">Controls: Click / WASD / Swipe</span>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODALS & DIALOGS
+       ======================================================================== -->
+
+  <!-- Victory Celebration Modal -->
+  <div id="victory-modal" class="cyber-modal">
+    <div class="modal-content victory-modal-content">
+      <div class="victory-crown-badge">👑</div>
+      <h2 class="victory-title">GRID CONQUERED!</h2>
+      <p class="victory-subtitle">CyberThrone core protocol successfully restored.</p>
+
+      <div class="victory-rank-pill" id="final-rank">S - CYBER ELITE</div>
+      <div id="final-record-badge" style="display: none; margin-bottom: 0.75rem;">
+        <span style="background: rgba(0,255,136,0.2); border: 1px solid #00ff88; color: #00ff88; font-family: var(--font-display); font-size: 0.68rem; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: 800;">⚡ NEW RECORD!</span>
+      </div>
+
+      <div class="victory-stats-grid">
+        <div>
+          <span class="v-stat-label">Total Moves</span>
+          <span id="final-moves" class="v-stat-val">0</span>
+        </div>
+        <div>
+          <span class="v-stat-label">Time Elapsed</span>
+          <span id="final-time" class="v-stat-val">00:00</span>
+        </div>
+      </div>
+
+      <button class="btn-play-again" onclick="app.closeModal('victory-modal'); app.restartGame();">
+        INITIALIZE NEXT PROTOCOL
+      </button>
+    </div>
+  </div>
+
+  <!-- Target Blueprint Preview Modal -->
+  <div id="blueprint-modal" class="cyber-modal">
+    <div class="modal-content blueprint-modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">TARGET BLUEPRINT</h3>
+        <button class="modal-close-btn" onclick="app.closeModal('blueprint-modal')">&times;</button>
+      </div>
+      <p id="blueprint-preview-name" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--theme-primary); margin-bottom: 0.75rem; letter-spacing: 0.1em;"></p>
+      <div class="blueprint-img-box">
+        <img id="blueprint-preview-img" src="assets/throne_king.png" alt="Target Blueprint">
+        <div id="blueprint-glyph-preview" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: #080c14; font-family: var(--font-display); color: var(--theme-primary); font-size: 1.5rem; font-weight: 900;">
+          CIPHER MATRIX 1-N
+        </div>
+      </div>
+      <button class="cyber-btn" style="width: 100%; justify-content: center;" onclick="app.closeModal('blueprint-modal')">
+        RESUME RECONSTRUCTION
+      </button>
+    </div>
+  </div>
+
+  <!-- Intel & Rules Modal -->
+  <div id="rules-modal" class="cyber-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">MISSION INTEL</h3>
+        <button class="modal-close-btn" onclick="app.closeModal('rules-modal')">&times;</button>
+      </div>
+
+      <div class="intel-list">
+        <div class="intel-item">
+          <strong>1. OBJECTIVE:</strong> Reconstruct the fragmented cyber matrix into its target blueprint state. The lower-right corner is reserved for the final matrix key.
+        </div>
+        <div class="intel-item gold-edge">
+          <strong>2. MULTI-TILE SLIDE:</strong> Click or tap any tile in the same row or column as the blank slot to slide entire line segments simultaneously!
+        </div>
+        <div class="intel-item pink-edge">
+          <strong>3. KEYBOARD & TOUCH:</strong> On desktop, use <strong>Arrow Keys</strong> or <strong>WASD</strong>. On touchscreens, swipe in any direction. Press <strong>H</strong> for AI hint and <strong>P</strong> for blueprint peek.
+        </div>
+        <div class="intel-item">
+          <strong>4. GUARANTEED SOLVABLE:</strong> Every reboot sequence is mathematically verified through reverse matrix walk permutations.
+        </div>
+      </div>
+
+      <button class="cyber-btn" style="width: 100%; justify-content: center;" onclick="app.closeModal('rules-modal')">
+        ACKNOWLEDGED
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings & Custom Hologram Modal -->
+  <div id="settings-modal" class="cyber-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">NEON SETTINGS</h3>
+        <button class="modal-close-btn" onclick="app.closeModal('settings-modal')">&times;</button>
+      </div>
+
+      <!-- Color Theme Switcher -->
+      <div class="settings-group">
+        <span class="settings-label">Matrix Theme</span>
+        <div class="theme-options">
+          <button class="theme-btn active" data-theme="default" onclick="app.setTheme('default')">CYAN</button>
+          <button class="theme-btn" data-theme="synthwave" onclick="app.setTheme('synthwave')">OUTRUN</button>
+          <button class="theme-btn" data-theme="matrix" onclick="app.setTheme('matrix')">MATRIX</button>
+          <button class="theme-btn" data-theme="solar" onclick="app.setTheme('solar')">SOLAR</button>
+        </div>
+      </div>
+
+      <!-- Audio Synthesizer Controls -->
+      <div class="settings-group">
+        <span class="settings-label">Synth Audio & Drone</span>
+        <div class="audio-slider-row">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">VOL</span>
+          <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.7">
+        </div>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+          <button id="ambient-drone-btn" class="cyber-btn" style="flex: 1; font-size: 0.7rem; justify-content: center;" onclick="app.toggleAmbientDrone()">
+            <span>ANALOG DRONE</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Image Upload -->
+      <div class="settings-group">
+        <span class="settings-label">Custom Hologram Upload</span>
+        <div id="custom-upload-zone" class="custom-upload-box">
+          <input type="file" id="custom-file-input" accept="image/*" style="display: none;">
+          <svg style="width: 24px; height: 24px; margin: 0 auto 0.4rem; color: var(--theme-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <p>Drop image here or click to load custom puzzle artwork</p>
+        </div>
+      </div>
+
+      <button class="cyber-btn" style="width: 100%; justify-content: center;" onclick="app.closeModal('settings-modal')">
+        SAVE CONFIGURATION
+      </button>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboard-modal" class="cyber-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">MISSION RECORDS</h3>
+        <button class="modal-close-btn" onclick="app.closeModal('leaderboard-modal')">&times;</button>
+      </div>
+
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Grid</th>
+            <th>Best Moves</th>
+            <th>Best Time</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <!-- Injected dynamically -->
+        </tbody>
+      </table>
+
+      <button class="cyber-btn" style="width: 100%; justify-content: center;" onclick="app.closeModal('leaderboard-modal')">
+        CLOSE RECORDS
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
